@@ -1,6 +1,6 @@
 import numpy
 import copy
-
+import time
 
 class Graph:
     """
@@ -14,40 +14,76 @@ class Graph:
     :type graph: list
     """
     def __init__(self, vertices, distancias=None):
-        if distancias is None:
-            distancias = []
+        """
+        Crea el gráfico con vertices "vertices" y distancias contenidas en distancias
+
+        :param vertices: El nombre y orden de los vértices del grafo
+        :type vertices: list
+        :param distancias: Las distancias del grafo, debería tener VN!/(VN-i)!n!
+        :type distancias: list
+        """
+        # Establece los parámetros básicos del grafo
         self.V = vertices
         self.VN = len(vertices)
         self.graph = []
+        self.con = [[] for i in range(self.VN)]
+        # Establece como distancia tentativa infinito para todos los nodos
         for fila in range(self.VN):
             self.graph.append([])
             for columna in vertices:
-                self.graph[fila].append("inf")
+                self.graph[fila].append(float("inf"))
+        # Establece que la distancia de un nodo con sí mismo es 0
         for n, i in enumerate(self.V):
             self.graph[n][n] = 0
 
+        # Si se especificó el parámetro distancias, se agregan
         if distancias:
-            nodo1 = 0
-            nodo2 = 1
-            for individual in distancias:
-                try:
-                    self.distancia_d(nodo1, nodo2, individual)
-                    nodo2 += 1
-                except IndexError:
-                    nodo1 += 1
-                    nodo2 = nodo1 + 1
-                    self.distancia_d(nodo1, nodo2, individual)
-                    nodo2 += 1
+            contador = 0
+            for n, nodo1 in enumerate(self.V):
+                for m, nodo2 in enumerate(self.V[n + 1:]):
+                    self.distancia_d(n, m+n+1, distancias[contador])
+                    if distancias[contador] not in [0, float("inf")]:
+                        temp = self.V.index(nodo2)
+                        if n not in self.con[temp]:
+                            self.con[temp].append(n)
+                        if temp not in self.con[n]:
+                            self.con[n].append(temp)
+
+                    contador += 1
 
     def distancia(self, nodo1, nodo2, dist):
+        """
+
+        :param nodo1: El nombre del nodo 1 a conectar
+        :type nodo1: str
+        :param nodo2: El nombre del nodo 2 a conectar
+        :type nodo2: str
+        :param dist: La distancia a conectar
+        :type dist: int
+        """
+        # Encuentra la posición de los nodos a conectar
         pos1 = self.V.index(nodo1)
         pos2 = self.V.index(nodo2)
-        self.graph[pos1][pos2] = dist
-        self.graph[pos2][pos1] = dist
+        # Establece la posición
+        self.distancia_d(pos1, pos2, dist)
 
     def distancia_d(self, nodo1, nodo2, dist):
+        """
+        Establece la distancia en base a la posición de los nodos
+        :param nodo1:
+        :type nodo1:
+        :param nodo2:
+        :type nodo2:
+        :param dist:
+        :type dist:
+        """
         self.graph[nodo1][nodo2] = dist
+        if nodo2 not in self.con[nodo1] and dist not in [0, float("inf")]:
+            self.con[nodo1].append(nodo2)
+
         self.graph[nodo2][nodo1] = dist
+        if nodo1 not in self.con[nodo2] and dist not in [0, float("inf")]:
+            self.con[nodo2].append(nodo1)
 
     def printgraph(self):
         cad = "\t\t"
@@ -71,6 +107,10 @@ class Graph:
         :return: las distancias, los caminos más cortos
         :rtype: tuple
         """
+        if inicio == "casa" or fin == "casa":
+            return -1, ["pobre"]
+        if inicio not in self.V or fin not in self.V:
+            return -2, ["Error 2, no existe la estación ingresada"]
         # Establecemos las distancias iniciales como infinito
         distancias = [float("inf") for i in self.V]
         # La distancia del punto con si mismo es 0
@@ -123,6 +163,82 @@ class Graph:
 
         return distancias, camino
 
+    def hamilton_greedy(self, inicio):
+        in_inicial = self.V.index(inicio)
+        camino = [in_inicial]
+        costo = 0
+        for i in range(self.VN-1):
+            encontrado = False
+            temp = self.graph[camino[-1]][:]
+            while len(temp) > 0:
+                min_value = min(temp)
+                in_min = self.graph[camino[-1]].index(min_value)
+                if in_min not in camino:
+                    camino.append(in_min)
+                    costo += min_value
+                    encontrado = True
+                    break
+                else:
+                    temp.remove(min_value)
+            if not encontrado:
+                raise Exception("It couldn't find a Hamiltonian cycle")
+        if self.graph[in_inicial][camino[-1]] != float("inf"):
+            costo += self.graph[in_inicial][camino[-1]]
+        else:
+            raise Exception("It couldn't find a Hamiltonian cycle")
+        camino.append(in_inicial)
+        return camino, costo
 
+    def _h_cycle(self, vert):
+        """
+        Revisa si existe un ciclo hamiltoniano en el grafo por medio de recursividad.
+        :param vert: Los vertices a revisar si están conectados
+        :type vert: list
+        :return: El ciclo hamiltoniano encontrado
+        :rtype: list
+        """
+        # Condicion de salida
+        if len(vert) == 1:
+            # Si el último vértice está conectado con el primero, devuelve el camino, si no, devuelve una lista vacía
+            if self.V.index(vert[0]) in self.con[0]:
+                return [self.V.index(vert[0])]
+            else:
+                return []
+        # Por cada vértice en vert
+        for ind,verti in enumerate(vert):
+            # Calcula si existe un ciclo hamiltoniano en el grafo sin el vértice actual
+            camino_al_final = self._h_cycle(vert[0:ind]+vert[ind+1:])
+            # Si existe un ciclo hamiltoniano en el grafo sin el vértice actual y el vértice actual está conectado con
+            # el primer vértice del camino, devuelve el camino
+            if camino_al_final and camino_al_final[0] in self.con[self.V.index(verti)]:
+                camino_al_final.insert(0, self.V.index(verti))
+                return camino_al_final
+        # Si no existe un ciclo hamiltoniano en el grafo sin el vértice actual, devuelve una lista vacía
+        return []
 
+    def ciclo_hamiltoniano(self):
+        """
+        Revisa si existe un ciclo hamiltoniano en el grafo
+        :return: El ciclo hamiltoniano encontrado
+        :rtype: list
+        """
+        # Revisa si existe un ciclo hamiltoniano en el grafo
+        camino = self._h_cycle(self.V[1:])
+        if camino and self.V.index(self.V[0]) in self.con[camino[0]]:
+            camino.insert(0, self.V.index(self.V[0]))
+            camino.append(self.V.index(self.V[0]))
+        else:
+            return []
+        return camino
 
+    def euler_cycle(self):
+        """
+        Revisa si existe un ciclo euleriano en el grafo
+        :return: El ciclo euleriano encontrado
+        :rtype: list
+        """
+        # Revisa si existe un ciclo euleriano en el grafo
+        for i in self.V:
+            if len(self.con[self.V.index(i)]) % 2 != 0:
+                return False
+        return True
