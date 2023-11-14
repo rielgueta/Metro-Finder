@@ -249,5 +249,4 @@ class Graph:
         self.printgraph()
 
     def __str__(self):
-
         return self.printgraph()
