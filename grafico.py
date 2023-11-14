@@ -86,15 +86,17 @@ class Graph:
             self.con[nodo2].append(nodo1)
 
     def printgraph(self):
+        a_imprimir = ""
         cad = "\t\t"
         for i in self.V:
             cad += i + "\t\t\t"
-        print(cad)
+        a_imprimir += cad + "\n"
         for i in range(self.VN):
             cadenita = self.V[i] + "\t\t"
             for j in self.graph[i]:
                 cadenita += str(j) + "\t\t\t"
-            print(cadenita)
+            a_imprimir += cadenita + "\n"
+        return a_imprimir
 
     def dijkstra(self, inicio, fin=""):
         """
@@ -242,3 +244,10 @@ class Graph:
             if len(self.con[self.V.index(i)]) % 2 != 0:
                 return False
         return True
+
+    def __print__(self):
+        self.printgraph()
+
+    def __str__(self):
+
+        return self.printgraph()
