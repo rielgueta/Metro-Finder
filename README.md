@@ -1,5 +1,7 @@
 # Metro-Finder
-Usa el algoritmo de Djikstra para encontrar el camino más corto entre 2 estaciones de metro
+Usa el algoritmo de Djikstra para encontrar el camino más corto entre 2 estaciones de metro.
+Este es un proyecto para experimentar un poco, no me interesan las contribuciones, pero lo tengo que poner público para que mis amigos lo puedan ver :(.
+
 # Contenidos
 - grafico.py
   - Lo único que contiene es la clase Graph, que representa un grafo, contiene distintos métodos respectivamente comentados en el código.
