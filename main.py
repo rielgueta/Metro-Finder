@@ -16,6 +16,7 @@ def dijkstra_metro(grafico, inic, fin):
     :return:
     :rtype:
     """
+    # PRUEBA
     # Importa el archivo con las estaciones
     global datos
     # Crea una copia del grafo para no alterar el original
